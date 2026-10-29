@@ -131,7 +131,7 @@ async def read_uploaded(request: Request, file: UploadFile = File(...)):
     _rate_limit(request)
     r = extract(text[:8000])
     if source == "image":
-        r["checks"].insert(0, "사진·스캔 문서는 AI가 옮겨 적은 글을 기준으로 확인했습니다. 원본 이미지와 날짜를 직접 대조하세요.")
+        r["checks"].insert(0, "사진·스캔 문서는 글자 인식(OCR) 결과를 기준으로 확인했습니다. 원본 이미지와 날짜를 직접 대조하세요.")
     r.update(text=text[:8000], source=source)
     return _with_result(r)
 

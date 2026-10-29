@@ -13,7 +13,7 @@ import boto3
 from .rules import PROCEDURES
 
 MODEL_ID = os.environ.get("BEDROCK_MODEL_ID", "apac.amazon.nova-pro-v1:0")
-# 사진·스캔 글자 옮기기는 한국어 이미지 인식이 더 정확한 Claude Haiku를 쓴다 (Nova는 한국어 이미지에서 환각이 잦았음)
+# Tesseract가 없는 환경에서만 쓰는 사진 글자 읽기 모델
 OCR_MODEL_ID = os.environ.get("BEDROCK_OCR_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0")
 _client = None
 
@@ -181,8 +181,24 @@ def ask(question, today):
 IMAGE_FORMATS = {"png": "png", "jpg": "jpeg", "jpeg": "jpeg", "webp": "webp", "gif": "gif"}
 
 
+def _tesseract(data):
+    """서버에 설치된 Tesseract(한국어 kor)로 글자를 읽는다. 사진이 외부로 나가지 않는다."""
+    import subprocess
+    r = subprocess.run(["tesseract", "stdin", "stdout", "-l", "kor+eng", "--psm", "6"],
+                       input=data, capture_output=True, timeout=60)
+    return r.stdout.decode("utf-8", errors="ignore")
+
+
 def transcribe_images(images):
-    """[(bytes, format)] → AI가 옮겨 적은 텍스트. 읽을 수 없는 부분은 [판독 불가]로 표시하게 한다."""
+    """[(bytes, format)] → 옮겨 적은 텍스트.
+
+    모델 비교 결과(2026.10): Nova Pro·Nova 2 Lite는 한국어 사진에서 없는 문장을 지어냈고,
+    Claude Haiku는 정확했지만 계정의 Marketplace 구독이 필요했다. 그래서 오픈소스 OCR인
+    Tesseract(kor)를 기본으로 쓰고, 설치돼 있지 않은 환경에서만 Bedrock 모델을 쓴다.
+    """
+    import shutil
+    if shutil.which("tesseract"):
+        return "\n\n".join(_tesseract(b) for b, _ in images[:3]).strip()
     content = [{"image": {"format": fmt_, "source": {"bytes": b}}} for b, fmt_ in images[:3]]
     content.append({"text": "이미지 속 문서의 글자를 보이는 그대로 옮겨 적으세요. 요약하거나 고치지 말고, "
                             "날짜와 숫자는 특히 정확히 옮기세요. 읽을 수 없는 부분은 [판독 불가]라고 적으세요. 옮긴 글자만 답하세요."})

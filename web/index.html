@@ -109,7 +109,7 @@ footer{font-size:12px;color:var(--ink3);padding:1.5rem 0 2.5rem}
 
       <div id="t-doc" hidden>
         <label>파일 첨부 <span style="font-weight:400;color:var(--ink3)">HWP · HWPX · DOCX · PDF · 사진(JPG·PNG), 5MB까지 · 서버에 저장하지 않습니다</span></label>
-        <div class="drop" id="drop"><input type="file" id="file" accept=".hwp,.hwpx,.docx,.pdf,.txt,.png,.jpg,.jpeg,.webp" hidden><b>파일을 끌어다 놓거나 눌러서 선택</b><span id="fileName">사진·스캔 PDF는 AI가 글자를 옮겨 적은 뒤 읽습니다</span></div>
+        <div class="drop" id="drop"><input type="file" id="file" accept=".hwp,.hwpx,.docx,.pdf,.txt,.png,.jpg,.jpeg,.webp" hidden><b>파일을 끌어다 놓거나 눌러서 선택</b><span id="fileName">사진·스캔 PDF는 글자 인식(OCR) 후 AI가 읽습니다</span></div>
         <label>또는 시연용 가상 문서</label>
         <div class="samples" id="samples"></div>
         <textarea id="doc" placeholder="송달증명원, 판결 선고 조서, 기록접수 통지서 등의 내용을 붙여 넣으세요. (실제 사건의 개인정보는 넣지 마세요)"></textarea>
@@ -211,7 +211,7 @@ $('#calcBtn').onclick = () => calc({
 
 function aiBlock(x){
   const interp = x.date_expression ? `<div class="interp">질문의 <b>'${esc(x.date_expression)}'</b>을(를) <b>${esc(x.base_date)}</b>로 해석했습니다.</div>` : '';
-  const img = lastImage && x.source === 'image' ? `<div class="sec"><h3>원본 사진 · AI가 옮긴 글과 대조하세요</h3><img class="preview" src="${lastImage}" alt="첨부한 사진"></div>` : '';
+  const img = lastImage && x.source === 'image' ? `<div class="sec"><h3>원본 사진 · 인식된 글과 대조하세요</h3><img class="preview" src="${lastImage}" alt="첨부한 사진"></div>` : '';
   return `${img}<div class="sec"><h3>AI가 읽은 값 · 확인 후 고칠 수 있어요</h3>${interp}
     ${x.case_number ? `<div class="note">사건번호: ${esc(x.case_number)}</div>` : ''}
     <div class="edit"><select id="aiProc">${procOptions(x.procedure, false)}</select><input type="date" id="aiBase" value="${esc(x.base_date)}"></div>
