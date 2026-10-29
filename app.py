@@ -1,4 +1,4 @@
-"""법정기간 계산 웹 API. AI는 문서·질문 읽기만, 계산은 규칙 엔진이 한다."""
+"""불변기한 계산 웹 API. AI는 문서·질문 읽기만, 계산은 규칙 엔진이 한다."""
 import os
 import time
 from collections import defaultdict, deque
@@ -15,7 +15,7 @@ from deadline.fileread import MAX_BYTES, FileReadError, pdf_images, read_file
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 KST = timezone(timedelta(hours=9))
-app = FastAPI(title="법정기간 계산 + AI 문서 읽기")
+app = FastAPI(title="불변기한 계산기 + AI 문서 읽기")
 
 # AI 호출 남용 방지: IP당 1시간에 20회
 _calls = defaultdict(deque)
