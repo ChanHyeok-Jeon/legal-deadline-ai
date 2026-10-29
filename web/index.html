@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법정기간 계산기 · AI 문서 읽기</title>
+<meta name="description" content="송달 문서를 넣으면 AI가 사건 정보를 읽고, 규칙 엔진이 근거 조문과 함께 만료일을 계산합니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--a:109,32,99;--accent:rgb(var(--a));--mauve:#954F74;--ink:#2D231E;--ink2:#5E5049;--ink3:#927E71;--line:#E9E6E1;--soft:#F8F4E9;--ok:#2F7D4F;--warn:#B4561F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',sans-serif;background:var(--soft);color:var(--ink);line-height:1.65;word-break:keep-all;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.top{background:var(--ink);color:#fff;padding:2.2rem 0 2rem}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.top .back{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.top h1{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.03em;margin:.6rem 0 .4rem}
+.top p{color:rgba(255,255,255,.7);font-size:15px;max-width:720px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;margin-top:1rem;font-size:12.5px}
+.flow span{border:1px solid rgba(255,255,255,.2);padding:4px 10px;border-radius:2px}
+.flow span.ai{background:var(--mauve);border-color:var(--mauve)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:1.6rem 0}
+.card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1.4rem}
+.tabs{display:flex;gap:4px;margin-bottom:1rem;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-size:13.5px;font-weight:600;background:none;border:none;padding:.55rem .9rem;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+label{display:block;font-size:12.5px;font-weight:600;color:var(--ink2);margin:.8rem 0 .35rem}
+select,input,textarea{width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:3px;padding:.6rem .7rem;background:#fff;color:var(--ink)}
+textarea{min-height:240px;resize:vertical;font-size:13px;line-height:1.6}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.samples{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.4rem}
+.samples button{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--soft);color:var(--ink2);border-radius:3px;padding:3px 9px;cursor:pointer}
+.samples button:hover{border-color:var(--accent);color:var(--accent)}
+.go{margin-top:1rem;width:100%;font:inherit;font-size:15px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:3px;padding:.8rem;cursor:pointer}
+.go:disabled{background:var(--ink3);cursor:wait}
+.hint{font-size:12px;color:var(--ink3);margin-top:.5rem}
+.drop{border:1.5px dashed var(--line);border-radius:4px;padding:1rem;text-align:center;cursor:pointer;background:var(--soft);transition:border-color .15s,background .15s;margin-bottom:.3rem}
+.drop:hover,.drop.over{border-color:var(--accent);background:#F6EEF3}
+.drop b{display:block;font-size:14px;color:var(--accent)}
+.drop span{font-size:12px;color:var(--ink3)}
+.empty{color:var(--ink3);font-size:14px;text-align:center;padding:3rem 1rem}
+.dl{border-bottom:1px solid var(--line);padding-bottom:1rem;margin-bottom:1rem}
+.dl small{display:block;font-size:12.5px;color:var(--ink3)}
+.dl b{display:block;font-size:30px;font-weight:800;color:var(--accent);letter-spacing:-.02em;line-height:1.3}
+.dl .left{display:inline-block;font-size:12.5px;font-weight:700;background:var(--soft);padding:2px 8px;border-radius:2px;margin-top:4px}
+.sec{margin-bottom:1rem}
+.sec h3{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.06em;margin-bottom:.4rem}
+.steps{list-style:none;counter-reset:s;font-size:13.5px;color:var(--ink2)}
+.steps li{counter-increment:s;padding:.3rem 0 .3rem 1.6rem;position:relative;border-bottom:1px dashed var(--line)}
+.steps li::before{content:counter(s);position:absolute;left:0;top:.35rem;width:1.15rem;height:1.15rem;border-radius:50%;background:var(--soft);font-size:11px;font-weight:700;text-align:center;line-height:1.15rem;color:var(--mauve)}
+.law{font-size:14px;font-weight:600}
+.note{font-size:13px;color:var(--ink2)}
+.ev{font-size:13px;padding:.4rem .6rem;border-left:3px solid var(--ok);background:#F2F8F4;margin-bottom:4px}
+.ev.bad{border-color:var(--warn);background:#FBF1EA}
+.ev em{font-style:normal;font-weight:700;font-size:11.5px;margin-right:6px}
+.warn{font-size:13px;color:var(--warn);background:#FBF1EA;border-radius:3px;padding:.5rem .7rem;margin-bottom:4px}
+.disc{font-size:12px;color:var(--ink3);border-top:1px solid var(--line);padding-top:.8rem;margin-top:1rem}
+.edit{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:.4rem}
+.why{margin:0 0 2.5rem}
+.why h2{font-size:18px;font-weight:800;margin-bottom:.6rem}
+.why ul{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.why li{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1rem;font-size:13.5px;color:var(--ink2)}
+.why li b{display:block;color:var(--ink);font-size:14.5px;margin-bottom:.3rem}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:.55rem 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.tgl:last-of-type{border-bottom:none}
+.tgl span{font-size:13.5px;font-weight:600;color:var(--ink)}
+.tgl small{display:block;font-size:11.5px;font-weight:400;color:var(--ink3)}
+.tgl input{display:none}
+.sw{position:relative;width:40px;height:22px;border-radius:11px;background:#D8D2C8;flex-shrink:0;transition:background .15s}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.tgl input:checked+.sw{background:var(--accent)}
+.tgl input:checked+.sw::after{left:21px}
+.opts{margin-top:.8rem;border:1px solid var(--line);border-radius:4px;padding:.2rem .8rem;background:#FDFCF9}
+.custom{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.q{min-height:90px}
+.ex{display:flex;flex-direction:column;gap:5px;margin-bottom:.5rem}
+.ex button{font:inherit;font-size:12.5px;text-align:left;border:1px solid var(--line);background:var(--soft);color:var(--ink2);border-radius:3px;padding:5px 9px;cursor:pointer}
+.ex button:hover{border-color:var(--accent);color:var(--accent)}
+.interp{font-size:13px;background:#F6EEF3;border-radius:3px;padding:.45rem .65rem;margin-bottom:.5rem}
+.preview{max-width:100%;max-height:260px;border:1px solid var(--line);border-radius:3px;display:block;margin:.3rem 0 .6rem}
+footer{font-size:12px;color:var(--ink3);padding:1.5rem 0 2.5rem}
+@media(max-width:860px){.grid,.why ul{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <a class="back" href="/">← 전찬혁 포트폴리오</a>
+  <h1>법정기간 계산기 · AI 문서 읽기</h1>
+  <p>질문을 하거나 송달 문서·사진을 넣으면 AI가 사건 종류와 기준일을 읽고, 계산은 법 규정을 그대로 옮긴 규칙 엔진이 합니다. 결과에는 계산 과정과 근거 조문, AI가 읽은 문장을 함께 보여 줍니다.</p>
+  <div class="flow"><span class="ai">AI: 질문·문서·사진 읽기</span><span>사람: 값 확인</span><span>규칙 엔진: 만료일 계산</span><span>근거 조문 표시</span></div>
+</div></div>
+
+<div class="wrap">
+  <div class="grid">
+    <div class="card">
+      <div class="tabs"><button class="tab on" data-t="ask">질문하기 (AI)</button><button class="tab" data-t="doc">문서·사진 (AI)</button><button class="tab" data-t="manual">직접 계산</button></div>
+
+      <div id="t-ask">
+        <label>예시 질문</label>
+        <div class="ex" id="examples">
+          <button>판결정본 어제 받았는데 항소 언제까지 해야 돼?</button>
+          <button>형사 판결이 10월 20일에 선고됐어. 항소기간 알려줘</button>
+          <button>아버지 돌아가신 걸 10월 1일에 알았는데 상속포기 기한은?</button>
+        </div>
+        <textarea id="question" class="q" placeholder="예) 지급명령 11월 3일에 송달받았는데 이의신청 언제까지 돼?"></textarea>
+        <button class="go" id="askBtn">AI에게 물어보기</button>
+        <div class="hint">'어제' 같은 날짜를 AI가 어떻게 해석했는지 결과에 함께 보여 줍니다. 계산은 규칙 엔진이 합니다.</div>
+      </div>
+
+      <div id="t-doc" hidden>
+        <label>파일 첨부 <span style="font-weight:400;color:var(--ink3)">HWP · HWPX · DOCX · PDF · 사진(JPG·PNG), 5MB까지 · 서버에 저장하지 않습니다</span></label>
+        <div class="drop" id="drop"><input type="file" id="file" accept=".hwp,.hwpx,.docx,.pdf,.txt,.png,.jpg,.jpeg,.webp" hidden><b>파일을 끌어다 놓거나 눌러서 선택</b><span id="fileName">사진·스캔 PDF는 AI가 글자를 옮겨 적은 뒤 읽습니다</span></div>
+        <label>또는 시연용 가상 문서</label>
+        <div class="samples" id="samples"></div>
+        <textarea id="doc" placeholder="송달증명원, 판결 선고 조서, 기록접수 통지서 등의 내용을 붙여 넣으세요. (실제 사건의 개인정보는 넣지 마세요)"></textarea>
+        <button class="go" id="readBtn">AI로 읽고 계산하기</button>
+        <div class="hint">AI는 날짜를 계산하지 않습니다. 읽은 값은 결과에서 고칠 수 있습니다.</div>
+      </div>
+
+      <div id="t-manual" hidden>
+        <label for="proc">절차</label>
+        <select id="proc"></select>
+        <div id="customBox" hidden><label>기간</label><div class="custom"><input type="number" id="cn" min="1" value="7"><select id="cu"><option value="day">일</option><option value="week">주</option><option value="month">개월</option><option value="year">년</option></select></div></div>
+        <label for="base" id="baseLabel">기준일</label>
+        <input type="date" id="base">
+        <div class="opts">
+          <label class="tgl"><span>초일 산입<small>기준일 당일부터 셈 · 형사 시효·구속기간, 오전 0시 시작 기간</small></span><input type="checkbox" id="optFirst"><i class="sw"></i></label>
+          <label class="tgl"><span>말일이 휴일이면 연장<small>끄면 토요일·공휴일이어도 그대로 만료 · 형사 시효·구속기간</small></span><input type="checkbox" id="optHoliday" checked><i class="sw"></i></label>
+        </div>
+        <button class="go" id="calcBtn">만료일 계산</button>
+      </div>
+    </div>
+
+    <div class="card" id="out"><div class="empty">왼쪽에서 질문하거나 문서를 넣으면<br>계산 결과가 여기에 나옵니다.</div></div>
+  </div>
+
+  <section class="why">
+    <h2>왜 이렇게 만들었나</h2>
+    <ul>
+      <li><b>계산은 AI에 맡기지 않습니다</b>LLM은 날짜 계산을 틀릴 수 있습니다. 하루만 틀려도 권리를 잃는 불변기간은 법 규정을 그대로 옮긴 코드로 계산하고, 자동 테스트로 검증했습니다.</li>
+      <li><b>AI는 읽기만, 근거는 코드가 확인합니다</b>AI가 근거로 든 문장과 날짜가 실제 문서에 있는지 코드가 다시 확인해, 지어낸 값이면 경고를 띄웁니다.</li>
+      <li><b>사람이 마지막에 확인합니다</b>AI가 읽은 절차와 기준일은 결과 화면에서 바로 고칠 수 있고, 계산 과정을 단계별로 보여 줘 검토하기 쉽게 했습니다.</li>
+    </ul>
+  </section>
+  <footer>계산 결과는 참고용이며 법적 효력이 없습니다. 실제 기산일과 휴일 적용은 사건 기록과 법원 공지로 확인하세요. 공휴일은 2025~2027년을 반영했습니다. · 소스: <a href="https://github.com/ChanHyeok-Jeon/legal-deadline-ai" target="_blank" rel="noopener">GitHub</a></footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let PROCS = [], lastImage = '';
+
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  ['ask', 'doc', 'manual'].forEach(k => $('#t-' + k).hidden = t.dataset.t !== k);
+});
+
+function procOptions(selected, withCustom){
+  let html = '', field = '';
+  PROCS.forEach(p => {
+    if (p.field !== field) { if (field) html += '</optgroup>'; html += `<optgroup label="${p.field}">`; field = p.field; }
+    html += `<option value="${p.code}"${p.code === selected ? ' selected' : ''}>${p.name}</option>`;
+  });
+  html += '</optgroup>';
+  if (withCustom) html += `<optgroup label="기타"><option value="custom"${selected === 'custom' ? ' selected' : ''}>직접 입력 (기간을 직접 정함)</option></optgroup>`;
+  return html;
+}
+
+async function init(){
+  PROCS = await (await fetch('api/procedures')).json();
+  $('#proc').innerHTML = procOptions('civ_appeal', true);
+  const upd = () => {
+    const c = $('#proc').value, p = PROCS.find(x => x.code === c);
+    $('#customBox').hidden = c !== 'custom';
+    $('#baseLabel').textContent = '기준일: ' + (p ? p.base : '기간을 셀 기준 날짜');
+  };
+  $('#proc').onchange = upd; upd();
+  $('#base').value = new Date().toISOString().slice(0, 10);
+  $('#examples').onclick = e => { if (e.target.tagName === 'BUTTON') { $('#question').value = e.target.textContent; $('#askBtn').click(); } };
+  const samples = await (await fetch('api/samples')).json();
+  $('#samples').innerHTML = samples.map((s, i) => `<button data-i="${i}">${esc(s.name)}</button>`).join('');
+  $('#samples').onclick = e => { if (e.target.dataset.i) $('#doc').value = samples[e.target.dataset.i].text; };
+  // 주소 끝에 #sample1 / #ask 를 붙이면 바로 시연한다 (포트폴리오 링크용)
+  const m = location.hash.match(/^#sample(\d)$/);
+  if (m && samples[m[1] - 1]) { document.querySelector('[data-t=doc]').click(); $('#doc').value = samples[m[1] - 1].text; $('#readBtn').click(); }
+  if (location.hash === '#ask') $('#examples button').click();
+}
+
+function renderResult(r, extra = ''){
+  const left = r.days_left > 0 ? `D-${r.days_left}` : r.days_left === 0 ? '오늘 만료' : `만료 후 ${-r.days_left}일 지남`;
+  $('#out').innerHTML = `
+    ${extra}
+    <div class="dl"><small>${esc(r.field)} · ${esc(r.name)} (${esc(r.period)})</small><b>${esc(r.deadline_label)}</b><span class="left">${left}</span></div>
+    ${r.warnings.map(w => `<div class="warn">⚠ ${esc(w)}</div>`).join('')}
+    <div class="sec"><h3>계산 과정</h3><ol class="steps">${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>
+    <div class="sec"><h3>근거 조문</h3><div class="law">${esc(r.law)}</div>${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}</div>
+    <div class="disc">참고용 계산입니다. 법적 효력이 없으며, 실제 기한은 사건 기록과 법원 공지로 확인하세요.</div>`;
+}
+
+async function calc(body, extra){
+  const res = await fetch('api/calc', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  if (!res.ok) { $('#out').innerHTML = extra + `<div class="warn">${esc((await res.json()).detail || '계산할 수 없습니다.')}</div>`; return; }
+  renderResult(await res.json(), extra);
+}
+
+$('#calcBtn').onclick = () => calc({
+  code: $('#proc').value, base: $('#base').value,
+  include_first: $('#optFirst').checked, extend_holiday: $('#optHoliday').checked,
+  n: +$('#cn').value, unit: $('#cu').value,
+}, '');
+
+function aiBlock(x){
+  const interp = x.date_expression ? `<div class="interp">질문의 <b>'${esc(x.date_expression)}'</b>을(를) <b>${esc(x.base_date)}</b>로 해석했습니다.</div>` : '';
+  const img = lastImage && x.source === 'image' ? `<div class="sec"><h3>원본 사진 · AI가 옮긴 글과 대조하세요</h3><img class="preview" src="${lastImage}" alt="첨부한 사진"></div>` : '';
+  return `${img}<div class="sec"><h3>AI가 읽은 값 · 확인 후 고칠 수 있어요</h3>${interp}
+    ${x.case_number ? `<div class="note">사건번호: ${esc(x.case_number)}</div>` : ''}
+    <div class="edit"><select id="aiProc">${procOptions(x.procedure, false)}</select><input type="date" id="aiBase" value="${esc(x.base_date)}"></div>
+    <button class="go" id="recalc" style="margin-top:.5rem;padding:.55rem;font-size:13.5px">이 값으로 다시 계산</button></div>
+    ${x.evidence.length ? `<div class="sec"><h3>AI가 근거로 든 문장</h3>${x.evidence.map(e => `<div class="ev${e.found ? '' : ' bad'}"><em>${e.found ? '✓ 문서에 있음' : '✗ 문서에서 못 찾음'}</em>${esc(e.text)}</div>`).join('')}</div>` : ''}
+    ${[...x.checks, ...x.missing.map(m => '부족한 정보: ' + m)].map(c => `<div class="warn">⚠ ${esc(c)}</div>`).join('')}`;
+}
+
+async function runAI(btn, label, makeRequest){
+  btn.disabled = true; btn.textContent = 'AI가 읽는 중…';
+  try {
+    const res = await makeRequest();
+    const x = await res.json();
+    if (!res.ok) throw new Error(x.detail || '읽기에 실패했습니다.');
+    if (x.text) $('#doc').value = x.text;
+    const block = aiBlock(x);
+    if (x.result) renderResult(x.result, block);
+    else $('#out').innerHTML = block + '<div class="empty" style="padding:1.5rem">값을 확인하고 "이 값으로 다시 계산"을 눌러 주세요.</div>';
+    $('#out').onclick = e => {
+      if (e.target.id !== 'recalc') return;
+      const b = $('#aiBase').value; if (!b) { $('#aiBase').focus(); return; }
+      const y = {...x, procedure: $('#aiProc').value, base_date: b};
+      calc({code: y.procedure, base: b}, aiBlock(y));
+    };
+  } catch (e) {
+    $('#out').innerHTML = `<div class="warn">${esc(e.message)}</div>`;
+  }
+  btn.disabled = false; btn.textContent = label;
+}
+
+$('#askBtn').onclick = () => {
+  const text = $('#question').value.trim();
+  if (!text) { $('#question').focus(); return; }
+  lastImage = '';
+  runAI($('#askBtn'), 'AI에게 물어보기', () => fetch('api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})}));
+};
+
+$('#readBtn').onclick = () => {
+  const text = $('#doc').value.trim();
+  if (!text) { $('#doc').focus(); return; }
+  lastImage = '';
+  runAI($('#readBtn'), 'AI로 읽고 계산하기', () => fetch('api/extract', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})}));
+};
+
+function sendFile(f){
+  if (!f) return;
+  $('#fileName').textContent = f.name;
+  lastImage = /^image\//.test(f.type) ? URL.createObjectURL(f) : '';
+  const fd = new FormData(); fd.append('file', f);
+  runAI($('#readBtn'), 'AI로 읽고 계산하기', () => fetch('api/extract-file', {method:'POST', body: fd}));
+}
+const drop = $('#drop');
+drop.onclick = () => $('#file').click();
+$('#file').onchange = e => sendFile(e.target.files[0]);
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); sendFile(e.dataTransfer.files[0]); };
+
+init();
+</script>
+</body>
+</html>
