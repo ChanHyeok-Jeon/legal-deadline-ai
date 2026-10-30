@@ -69,7 +69,7 @@ def procedures():
 def samples():
     d = os.path.join(BASE_DIR, "samples")
     return [{"name": f[3:-4].replace("_", " "), "text": open(os.path.join(d, f), encoding="utf-8").read()}
-            for f in sorted(os.listdir(d)) if f.endswith(".txt")]
+            for f in sorted(os.listdir(d)) if f.endswith(".txt") and not f.startswith(".")]  # macOS ._ 메타 파일 제외
 
 
 @app.post("/api/calc")
